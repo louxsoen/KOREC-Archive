@@ -19,17 +19,7 @@ typedef unsigned int u32;
     | ((u32)Sbox[(u8)((x >> 8) & 0xFF)] << 8) \
     | ((u32)Sbox[(u8)(x & 0xff)]) \
 
-void prt(u8 CT[16])
-{   
-    printf("\n");
-    for(int i = 0 ; i < 4 ; i++)
-    {
-    for(int k = 0 ; k < 4 ; k++)
-    printf("%02X ", CT[k * 4 + i]);
-    printf("\n"); 
-    }
-    printf("\n");
-}
+#define testfield 10000
 
 u8 Sbox[256] = {
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -206,60 +196,35 @@ void AES_ENC(u8 PT[16], u8 RK[16], u8 CT[16], int keysize)
     for(i = 0 ; i < 16 ; i++)
     CT[i] = PT[i];
 
-    // prt(RK);
     AddRoundKey(CT, RK);
-    // prt(CT);
-
-    for(int i = 0 ; i < Nr - 1 ; i++)
-    {   
-        // printf("%d라운드 SubBytes || ", i+1);
+    for(int i = 0 ; i < Nr - 1 ; i++) {   
         SubBytes(CT);
-        // prt(CT);
-        // printf("%d라운드 ShiftRows || ", i+1);
         Shiftrows(CT);
-        // prt(CT);
-        // printf("%d라운드 Mixcolumns || ", i+1);
         Mixcolumns(CT);
-        // prt(CT);
-        // printf("%d라운드 Addroundkey || ", i+1);
         AddRoundKey(CT, RK + 16 * (i + 1));
-        // prt(CT);
     }
     SubBytes(CT);
     Shiftrows(CT);
     AddRoundKey(CT, RK + 16 * 10);
 }
 
-void AES_DEC(u8 PT[16], u8 RK[16], u8 CT[16], int keysize)
-{
+void AES_DEC(u8 PT[16], u8 RK[16], u8 CT[16], int keysize) {
     int Nr = keysize / 32 + 6;
     int i;
     for(i = 0 ; i < 16 ; i++)
     CT[i] = PT[i];
 
-    // prt(RK);
     AddRoundKey(CT, RK + 16 * 10);
-    // prt(CT);
 
-    for(int i = 0 ; i < Nr - 1 ; i++)
-    {   
-        //printf("%d라운드 InvShiftRows || ", i+1);
+    for(int i = 0 ; i < Nr - 1 ; i++) {
         InvShiftrows(CT);
-        //prt(CT);
-        //printf("%d라운드 InvSubBytes || ", i+1);
         InvSubBytes(CT);
-        //prt(CT);
-        //printf("%d라운드 Addroundkey || ", i+1);
         AddRoundKey(CT, RK + (16 * 9) - 16 * i);
-        //prt(CT);
-        //printf("%d라운드 InvMixcolumns || ", i+1);
         InvMixcolumns(CT);
-        //prt(CT);
     }
     InvShiftrows(CT);
     InvSubBytes(CT);
     AddRoundKey(CT, RK + 0);
-    //prt(CT);
 }
 
 void pprt(u8 A[])
@@ -272,32 +237,41 @@ void pprt(u8 A[])
 
 int main()
 {
-    int i;
     u8 PT[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
     u8 MK[16] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0 };
     u8 CT[16] = { 0x00, };
     u8 RE[16] = { 0x00, };
     u8 RK[240] = { 0x00, };
     int keysize = 128;
-
+    int i;
 
     AES_KeySchedule(MK, RK, keysize);
+
     double result;
     clock_t start, end;
     
     start = clock();
-    for(int i = 0 ; i < 10000 ; i++)
+    
+    for(int i = 0 ; i < testfield ; i++)
     AES_ENC(PT, RK, CT, keysize);
     end = clock();
     result = (double) (end - start);
-    result /= 10000;
-    printf("[AES] ENCRYPTION ELAPSE TIME : %.4lf ms (LAB)\n", result);
+    result /= testfield;
+
+    printf("Plaintext : ");
+    pprt(PT);
+    printf("Ciphertext : ");
+    pprt(CT);
+
+    printf("AES ENCRYPTION ELAPSE TIME : %.4lf ms \n", result);
     
     start = clock();
-    for(int i = 0 ; i < 10000 ; i++)
+    for(int i = 0 ; i < testfield ; i++)
     AES_DEC(CT, RK, PT, keysize);
+
     end = clock();
     result = (double) (end - start);
-    result /= 10000;
-    printf("[AES] DECRYPTION ELAPSE TIME : %.4lf ms (LAB)\n", result);
+    result /= testfield;
+
+    printf("AES DECRYPTION ELAPSE TIME : %.4lf ms (LAB)\n", result);
 }   
